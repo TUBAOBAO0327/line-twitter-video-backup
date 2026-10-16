@@ -84,17 +84,15 @@ def _sync_download_and_upload(url: str) -> list[dict]:
 
 async def process_twitter_urls_task(user_id: str, urls: list[str]):
     """非同步背景任務：處理一或多個 Twitter 網址並透過 Push Message 或後續通知回報結果"""
+    folder_link = (
+        f"https://drive.google.com/drive/folders/{GOOGLE_DRIVE_FOLDER_ID}?usp=sharing"
+        if GOOGLE_DRIVE_FOLDER_ID
+        else "https://drive.google.com/drive/folders/1_0LSKQjo5T7lIsQHV-nciGYBj7CWC5xG?usp=sharing"
+    )
     for url in urls:
         try:
-            uploaded_items = await asyncio.to_thread(_sync_download_and_upload, url)
-            lines = ["✅ 推特影片備份成功！"]
-            for idx, info in enumerate(uploaded_items, start=1):
-                prefix = f"\n📹 影片 {idx}：" if len(uploaded_items) > 1 else "\n📹 檔案："
-                lines.append(f"{prefix}{info['filename']} ({info['size_mb']} MB)")
-                lines.append(f"📝 內容：{info['title']}")
-                lines.append(f"☁️ 雲端連結：\n{info['web_view_link']}")
-
-            reply_text = "\n".join(lines)
+            await asyncio.to_thread(_sync_download_and_upload, url)
+            reply_text = f"✅ 推特影片備份成功！\n{folder_link}"
         except Exception as e:
             logger.exception(f"處理網址失敗 {url}: {e}")
             reply_text = f"❌ 備份失敗：\n{url}\n原因：{str(e)}"
